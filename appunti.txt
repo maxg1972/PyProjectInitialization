@@ -1,0 +1,8 @@
+pycreate 	: crea la struttura di un progetto python/django
+--django	: se specificata il progetto è django, se omesso è un progetto python
+--github	: crea il progetto su github, se omesso il progetto non ha un cvs
+--no-venv	: non crea il 'virtualenv'
+
+Cosa necessita:
+- deve essere presente il token per l'accesso a GitHub (memorizzato in ~/.config/pycreate/config)
+
