@@ -38,8 +38,6 @@ def get_arguments() -> Options:
 
     args = opts.parse_args()
 
-    print(args)
-
     return args
 
 
@@ -54,6 +52,7 @@ def github_conn():
 def create_project(opts: Options):
     dest_path = os.getcwd() + f"/{opts.project_name}"
 
+    commands = []
     if opts.github:
         gh = github_conn()        
 
@@ -69,16 +68,39 @@ def create_project(opts: Options):
         # clone repository
         os.system(f"git clone git@github.com:{user.login}/{opts.projecy_name}.git")
 
-    # commands = [
-    #     f"@echo # {ProjectFolder}>> README.md",
-    #     "git add .",
-    #     'git commit -m "Initial commit"',
-    #     "git push -u origin master",
-    # ]
+        commands.extend( 
+            [
+                f"@echo # {opts.projecy_name}>> README.md",
+                "@echo venv/ >> .gitignore",
+                "@echo .vscode/ >> .gitignore",
+                "git add .",
+                'git commit -m "Initial commit"',
+                "git push -u origin master",
+            ]
+        )
+    else:
+        os.mkdir(dest_path)
 
-    # for c in commands:
-    #     os.system(c)    
-    # os.chdir(dest_path)
+    os.chdir(dest_path)
+
+    if not opts.no_venv:
+        commands.append("virtualenv venv")
+    
+    if opts.django:
+        commands.extend( 
+            [
+                "source venv/bin/activate ",
+                "pip3 install Django",
+                f"django-admin.py startproject {opts.projecy_name}",
+                "deactivate",
+            ]
+        )
+
+        dest_path = dest_path + f"/{opts.project_name}"
+    
+    commands.append("code .")
+    for c in commands:
+        os.system(c)    
 
 
 if __name__ == "__main__":
