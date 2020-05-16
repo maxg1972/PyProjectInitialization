@@ -19,7 +19,6 @@ class Options(argparse.ArgumentParser):
     def error(self, message):
         script_name = os.path.splitext(os.path.basename(__file__))[0]
         sys.stderr.write("%s: %s. Use '%s --help'\n" % (script_name, message, script_name))
-        #self.print_help()
         sys.exit(2)
 
 
@@ -27,7 +26,7 @@ def get_arguments() -> Options:
     """Define the script options, read the command line arguments 
     
     Returns:
-        Options -- strinpt options
+        Options -- input options
     """
     # Get script arguments
     opts = Options(description="Create new python project structure")
@@ -42,6 +41,11 @@ def get_arguments() -> Options:
 
 
 def github_conn():
+    """Open connection to GitHub
+
+    Returns:
+        Github -- github connection object
+    """
     token_file = "%s/.config/pycreate/config" % Path.home()
     
     with open(token_file, 'r') as cfg_file:
@@ -50,42 +54,57 @@ def github_conn():
     return Github(token)
 
 def create_project(opts: Options):
-    dest_path = os.getcwd() + f"/{opts.project_name}"
+    """Generate new project
+
+    Arguments:
+        opts {Options} -- input options
+    """
 
     commands = []
+
+    # project destionation path
+    dest_path = os.getcwd() + f"/{opts.project_name}"
+
     if opts.github:
+        # get github connection
         gh = github_conn()        
 
-        # get or create repository
+        # get repository info or create is not exists
         new = False
         user = gh.get_user()
         try:
             user.get_repo(opts.project_name)
-            new = True
         except:
             repo = user.create_repo(opts.project_name)
+            new = True
 
         # clone repository
         os.system(f"git clone git@github.com:{user.login}/{opts.projecy_name}.git")
 
-        commands.extend( 
-            [
-                f"@echo # {opts.projecy_name}>> README.md",
-                "@echo venv/ >> .gitignore",
-                "@echo .vscode/ >> .gitignore",
-                "git add .",
-                'git commit -m "Initial commit"',
-                "git push -u origin master",
-            ]
+        # actions for new repository
+        if new:
+            commands.extend( 
+                [
+                    f"@echo # {opts.projecy_name}>> README.md",
+                    "@echo venv/ >> .gitignore",
+                    "@echo .vscode/ >> .gitignore",
+                    "git add .",
+                    'git commit -m "Initial commit"',
+                    "git push -u origin master",
+                ]
         )
     else:
+        # create project folder
         os.mkdir(dest_path)
 
+    # set project folder as current
     os.chdir(dest_path)
 
+    # create virtualenv
     if not opts.no_venv:
         commands.append("virtualenv venv")
     
+    # action for django project
     if opts.django:
         commands.extend( 
             [
@@ -97,8 +116,12 @@ def create_project(opts: Options):
         )
 
         dest_path = dest_path + f"/{opts.project_name}"
+        os.chdir(dest_path)
     
+    # action to open vscode
     commands.append("code .")
+
+    # execute actions
     for c in commands:
         os.system(c)    
 
